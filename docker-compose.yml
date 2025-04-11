@@ -1,0 +1,94 @@
+# AMPP 1.0.9
+#
+# Runs Apache, MySQL, PHP (+Redis) and PhpMyAdmin
+# SSL is preconfigured.
+# Imagemagick and XDebug are activated.
+#
+# Run with 
+# docker-compose up -d
+#
+# (C)2020-2022 Harald Schneider
+#
+ 
+version: "3"
+ 
+services:
+ 
+  # --- MySQL 5.7
+  #
+  mysql:
+    container_name: "ampp-mysql"
+    image: bitnami/mysql:5.7
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=oeko1234
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=oeko1234
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./docker/mysql/data:/bitnami/mysql/data
+      - ./docker/mysql/backup:/backup
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+ 
+  # --- PHP 7.4
+  #
+  php:
+    container_name: "ampp-php"
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes:
+      #- /Users/hschneider/Work/Web:/app:delegated
+      - ./docker/www:/app:delegated
+      - ./docker/php/php.ini:/opt/bitnami/php/etc/conf.d/php.ini:ro
+ 
+  # --- Apache 2.4
+  #
+  apache:
+    container_name: "ampp-apache"
+    image: bitnami/apache:2.4
+    ports:
+      - '80:8080'
+      - '443:8443'
+    depends_on:
+      - php
+    volumes:
+      #- /Users/hschneider/Work/Web:/app:delegated
+      - ./docker/www:/app:delegated
+      - ./docker/apache/my_vhost.conf:/vhosts/myapp.conf:ro
+      - ./docker/apache/certs:/certs
+      # Use this for bitnami's builtin certs:
+      # ./docker/apache/certs:/opt/bitnami/apache2/conf/bitnami/certs 
+ 
+  # --- Redis 6.0
+  #
+  redis:
+    container_name: "ampp-redis"
+    image: bitnami/redis:6.0
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=at15jx13
+ 
+  # --- PhpMyAdmin latest
+  # Acccess via
+  # http://127.0.0.1:8180 or https://127.0.0.1:8143
+  # Login with user root and mysql-password.
+  #
+  phpmyadmin:
+    container_name: "ampp-phpmyadmin"
+    image: bitnami/phpmyadmin:latest
+    depends_on:
+      - mysql
+    ports:
+      - '8180:8080'
+      - '8143:8443'
+    environment:
+      - DATABASE_HOST=mysql
+ 
+volumes:
+  ampp-mysql:
+    driver: local

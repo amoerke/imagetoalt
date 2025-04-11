@@ -1,0 +1,15 @@
+{
+    "require": {
+        "codewithkyrian/transformers": "^0.5.3",
+        "ankane/onnxruntime": "^0.2.6"
+    },
+    "config": {
+        "allow-plugins": {
+            "codewithkyrian/transformers-libsloader": true
+        }
+    },
+    "scripts": {
+        "post-install-cmd": "OnnxRuntime\\Vendor::check",
+        "post-update-cmd": "OnnxRuntime\\Vendor::check"
+    }
+}
